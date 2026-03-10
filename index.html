@@ -240,6 +240,22 @@ textarea.field::placeholder{color:var(--text3);}
 }
 @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .fade-in{animation:fadeUp .2s ease;}
+
+/* PASSWORD SCREEN */
+.pwd-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;}
+.pwd-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px 36px;width:min(360px,92vw);display:flex;flex-direction:column;align-items:center;gap:20px;box-shadow:0 24px 80px rgba(0,0,0,.5);}
+.pwd-logo{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;display:flex;align-items:center;gap:8px;}
+.pwd-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;}
+.pwd-sub{font-size:13px;color:var(--text2);text-align:center;line-height:1.6;}
+.pwd-input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:13px 16px;font-size:16px;font-family:'DM Sans',sans-serif;outline:none;text-align:center;letter-spacing:3px;transition:border-color .15s;}
+.pwd-input:focus{border-color:var(--accent2);}
+.pwd-input.shake{animation:shake .4s ease;}
+.pwd-btn{width:100%;background:var(--accent);color:#0e0f11;border:none;border-radius:10px;padding:13px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:opacity .15s;}
+.pwd-btn:hover{opacity:.85;}
+.pwd-error{font-size:12px;color:var(--red);text-align:center;min-height:16px;}
+.pwd-change{font-size:11px;color:var(--text3);text-align:center;cursor:pointer;text-decoration:underline;}
+.pwd-change:hover{color:var(--text2);}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 </style>
 </head>
 <body>
@@ -388,8 +404,33 @@ alter table fn_folders enable row level security;</div>
   </div>
 </div>
 
+<!-- PASSWORD SCREEN -->
+<div class="pwd-screen" id="pwd-screen" style="display:none;">
+  <div class="pwd-box">
+    <div class="pwd-logo"><span class="pwd-dot"></span>AKY's Notes</div>
+    <div class="pwd-sub" id="pwd-sub">Devam etmek için şifrenizi girin.</div>
+    <input class="pwd-input" type="password" id="pwd-input" placeholder="••••••••" maxlength="32"
+      onkeydown="if(event.key==='Enter')checkPwd()" autocomplete="current-password"/>
+    <button class="pwd-btn" onclick="checkPwd()">Giriş</button>
+    <div class="pwd-error" id="pwd-error"></div>
+    <div class="pwd-change" id="pwd-change-link" onclick="showChangePwd()" style="display:none;">Şifreyi değiştir</div>
+  </div>
+</div>
+
+<!-- CHANGE PASSWORD SCREEN -->
+<div class="pwd-screen" id="change-pwd-screen" style="display:none;">
+  <div class="pwd-box">
+    <div class="pwd-logo"><span class="pwd-dot"></span>Şifre Değiştir</div>
+    <input class="pwd-input" type="password" id="old-pwd-input" placeholder="Mevcut şifre" style="letter-spacing:3px;margin-bottom:4px;" maxlength="32"/>
+    <input class="pwd-input" type="password" id="new-pwd-input" placeholder="Yeni şifre" style="letter-spacing:3px;" maxlength="32"/>
+    <button class="pwd-btn" onclick="changePwd()">Kaydet</button>
+    <div class="pwd-error" id="change-pwd-error"></div>
+    <div class="pwd-change" onclick="closeChangePwd()">Geri dön</div>
+  </div>
+</div>
+
 <!-- APP -->
-<div class="app">
+<div class="app" id="app-wrap">
   <!-- P1: FOLDERS -->
   <div class="panel-folders" id="panel-folders">
     <div class="panel-folders-header">
@@ -401,13 +442,15 @@ alter table fn_folders enable row level security;</div>
       <button class="footer-btn" onclick="toggleLang()" id="lang-btn">EN</button>
       <button class="footer-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
       <button class="footer-btn" onclick="openSetupModal()" title="Sync ayarları">☁️</button>
+      <button class="footer-btn" onclick="lockApp()" title="Kilitle">🔒</button>
     </div>
   </div>
 
   <!-- P2: ENTITIES -->
   <div class="panel-entities" id="panel-entities">
     <div class="panel-header">
-      <div class="panel-title">
+      <div class="panel-title" style="gap:6px;">
+        <button class="icon-btn mob-back" onclick="mobBack('folders')" style="display:none;">‹</button>
         <span id="p2-icon">📁</span>
         <span id="p2-name" style="color:var(--text);font-size:13px;text-transform:none;letter-spacing:0;font-family:'Syne',sans-serif;">—</span>
       </div>
@@ -424,7 +467,8 @@ alter table fn_folders enable row level security;</div>
   <!-- P3: DATE NOTES -->
   <div class="panel-notes" id="panel-notes">
     <div class="panel-header">
-      <div class="panel-title" style="text-transform:none;letter-spacing:0;">
+      <div class="panel-title" style="text-transform:none;letter-spacing:0;gap:6px;">
+        <button class="icon-btn mob-back" onclick="mobBack('entities')" style="display:none;">‹</button>
         <span id="p3-entity-name" style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);">Notlar</span>
       </div>
     </div>
@@ -501,6 +545,98 @@ alter table fn_folders enable row level security;</div>
 </div>
 
 <script>
+
+// ═══════════════════════════════════════════════════════════
+// PASSWORD
+// ═══════════════════════════════════════════════════════════
+const DEFAULT_PWD = 'akynotes2026'; // İlk şifre — giriş yapınca değiştirebilirsin
+const PWD_KEY = 'fn4_pwd_hash';
+const SESSION_KEY = 'fn4_authed';
+
+function hashPwd(str){
+  // Simple but effective: btoa + reverse
+  return btoa(str.split('').reverse().join('')+'_fn4');
+}
+
+function getStoredHash(){
+  return localStorage.getItem(PWD_KEY) || hashPwd(DEFAULT_PWD);
+}
+
+function isAuthed(){
+  return sessionStorage.getItem(SESSION_KEY) === '1';
+}
+
+function showPwdScreen(){
+  document.getElementById('pwd-screen').style.display='flex';
+  document.getElementById('app-wrap').style.display='none';
+  setTimeout(()=>document.getElementById('pwd-input').focus(), 100);
+  // Show change pwd link if custom pwd already set
+  if(localStorage.getItem(PWD_KEY)){
+    document.getElementById('pwd-change-link').style.display='block';
+  }
+}
+
+function hidePwdScreen(){
+  document.getElementById('pwd-screen').style.display='none';
+  document.getElementById('app-wrap').style.display='flex';
+}
+
+function checkPwd(){
+  const val = document.getElementById('pwd-input').value;
+  const err = document.getElementById('pwd-error');
+  if(!val){err.textContent='Şifre boş olamaz.';return;}
+  if(hashPwd(val) === getStoredHash()){
+    sessionStorage.setItem(SESSION_KEY,'1');
+    err.textContent='';
+    document.getElementById('pwd-input').value='';
+    hidePwdScreen();
+    if(SB_URL&&SB_KEY&&isOnline) setTimeout(syncNow,800);
+  } else {
+    err.textContent='Yanlış şifre.';
+    const inp=document.getElementById('pwd-input');
+    inp.classList.add('shake');
+    setTimeout(()=>inp.classList.remove('shake'),400);
+    inp.select();
+  }
+}
+
+function showChangePwd(){
+  document.getElementById('pwd-screen').style.display='none';
+  document.getElementById('change-pwd-screen').style.display='flex';
+  setTimeout(()=>document.getElementById('old-pwd-input').focus(),100);
+}
+
+function closeChangePwd(){
+  document.getElementById('change-pwd-screen').style.display='none';
+  document.getElementById('pwd-screen').style.display='flex';
+  document.getElementById('change-pwd-error').textContent='';
+}
+
+function changePwd(){
+  const oldVal = document.getElementById('old-pwd-input').value;
+  const newVal = document.getElementById('new-pwd-input').value;
+  const err = document.getElementById('change-pwd-error');
+  if(hashPwd(oldVal) !== getStoredHash()){err.textContent='Mevcut şifre yanlış.';return;}
+  if(newVal.length < 4){err.textContent='Yeni şifre en az 4 karakter olmalı.';return;}
+  localStorage.setItem(PWD_KEY, hashPwd(newVal));
+  err.style.color='var(--green)';
+  err.textContent='Şifre değiştirildi ✓';
+  setTimeout(()=>{
+    document.getElementById('old-pwd-input').value='';
+    document.getElementById('new-pwd-input').value='';
+    closeChangePwd();
+    hidePwdScreen();
+    sessionStorage.setItem(SESSION_KEY,'1');
+    document.getElementById('app-wrap').style.display='flex';
+  },1000);
+}
+
+// Lock button in footer
+function lockApp(){
+  sessionStorage.removeItem(SESSION_KEY);
+  showPwdScreen();
+}
+
 // ═══════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════
@@ -943,6 +1079,11 @@ function selFolder(id){
   const f=db.folders.find(x=>x.id===id);
   if(f){document.getElementById('p2-icon').textContent=f.icon;document.getElementById('p2-name').textContent=f.name;}
   rFolders_();rEntities();rNotesList();showEditor(false);updateBC();
+  if(window.innerWidth<=860){
+    document.getElementById('panel-folders').classList.remove('open');
+    document.getElementById('panel-entities').classList.add('open');
+    document.getElementById('mob-overlay').classList.add('show');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -976,6 +1117,11 @@ function selEntity(id){
   const e=db.entities.find(x=>x.id===id);
   if(e)document.getElementById('p3-entity-name').textContent=e.name;
   rEntities();rNotesList();showEditor(false);updateBC();
+  if(window.innerWidth<=860){
+    document.getElementById('panel-entities').classList.remove('open');
+    document.getElementById('panel-notes').classList.add('open');
+    document.getElementById('mob-overlay').classList.add('show');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1015,6 +1161,10 @@ function openNote(id){
   document.getElementById('field-extra').value=n.extra||'';
   rActions(n.actions||[]);
   showEditor(true);updateBC();setSaved(true);rNotesList();
+  if(window.innerWidth<=860){
+    document.getElementById('panel-notes').classList.remove('open');
+    document.getElementById('mob-overlay').classList.remove('show');
+  }
 }
 
 function showEditor(s){
@@ -1269,12 +1419,32 @@ function toggleTheme(){
 function toggleMobileNav(){
   const pf=document.getElementById('panel-folders');
   if(pf.classList.contains('open')){closeAllPanels();}
-  else{pf.classList.add('open');document.getElementById('mob-overlay').classList.add('show');}
+  else{
+    closeAllPanels();
+    pf.classList.add('open');
+    document.getElementById('mob-overlay').classList.add('show');
+  }
+}
+function mobBack(to){
+  if(to==='folders'){
+    document.getElementById('panel-entities').classList.remove('open');
+    document.getElementById('panel-folders').classList.add('open');
+    document.getElementById('mob-overlay').classList.add('show');
+  } else if(to==='entities'){
+    document.getElementById('panel-notes').classList.remove('open');
+    document.getElementById('panel-entities').classList.add('open');
+    document.getElementById('mob-overlay').classList.add('show');
+  }
 }
 function closeAllPanels(){
   ['panel-folders','panel-entities','panel-notes'].forEach(id=>document.getElementById(id).classList.remove('open'));
   document.getElementById('mob-overlay').classList.remove('show');
 }
+function applyMobileBackBtns(){
+  const isMob=window.innerWidth<=860;
+  document.querySelectorAll('.mob-back').forEach(el=>el.style.display=isMob?'flex':'none');
+}
+window.addEventListener('resize', applyMobileBackBtns);
 
 // ═══════════════════════════════════════════════════════════
 // NETWORK EVENTS
@@ -1309,7 +1479,13 @@ document.getElementById('theme-btn').textContent=thIc;
 document.getElementById('theme-btn2').textContent=thIc;
 document.getElementById('lang-btn').textContent=lang==='tr'?'EN':'TR';
 document.getElementById('lang-btn2').textContent=lang==='tr'?'EN':'TR';
-applyLang();rFolders_();rEntities();rNotesList();updatePendingBadge();
+applyLang();rFolders_();rEntities();rNotesList();updatePendingBadge();applyMobileBackBtns();
+// Auth check
+if(!isAuthed()){
+  showPwdScreen();
+} else {
+  if(SB_URL&&SB_KEY&&isOnline) setTimeout(syncNow,800);
+}
 
 // Initial sync if configured
 if(SB_URL&&SB_KEY&&isOnline) setTimeout(syncNow, 800);

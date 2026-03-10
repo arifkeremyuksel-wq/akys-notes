@@ -695,14 +695,12 @@ async function syncNow(){
       let ok=false;
       if(op.type==='upsert'){
         const row = toRow(op.table, op.data);
-        const r = await sbFetch(op.table+'?id=eq.'+op.data.id, {
-          method:'DELETE', prefer:'return=minimal'
-        });
         const r2 = await sbFetch(op.table, {
-          method:'POST', prefer:'return=minimal',
+          method:'POST',
+          headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
           body: JSON.stringify(row)
         });
-        ok = r2!==null || r!==null;
+        ok = r2!==null;
       } else if(op.type==='delete'){
         await sbFetch(op.table+'?id=eq.'+op.data.id, {method:'DELETE'});
         ok=true;
@@ -896,15 +894,25 @@ async function saveSupabaseConfig(){
   SB_URL=url; SB_KEY=key;
   localStorage.setItem('fn4_sb_url',url);
   localStorage.setItem('fn4_sb_key',key);
-
-  // Push all local data to Supabase
-  setSyncStatus('syncing',t().syncSyncing);
-  for(const f of db.folders) queueChange('upsert','fn_folders',f);
-  for(const e of db.entities) queueChange('upsert','fn_entities',e);
-  for(const n of db.notes) queueChange('upsert','fn_notes',n);
-
   closeSetupModal();
-  await syncNow();
+  setSyncStatus('syncing',t().syncSyncing);
+
+  // Directly push all local data to Supabase (bypass queue)
+  try {
+    for(const f of db.folders){
+      await sbFetch('fn_folders',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(toRow('fn_folders',f))});
+    }
+    for(const e of db.entities){
+      await sbFetch('fn_entities',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(toRow('fn_entities',e))});
+    }
+    for(const n of db.notes){
+      await sbFetch('fn_notes',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(toRow('fn_notes',n))});
+    }
+    syncQueue=[];saveQueue();updatePendingBadge();
+    setSyncStatus('online',t().syncOnline+' · '+new Date().toLocaleTimeString());
+  } catch(e){
+    setSyncStatus('offline',t().syncOffline);
+  }
 }
 function copySQL(){
   navigator.clipboard.writeText(document.getElementById('sql-code').textContent);

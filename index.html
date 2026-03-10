@@ -1220,21 +1220,22 @@ function setSaved(s){
 // LANG / THEME
 // ═══════════════════════════════════════════════════════════
 function applyLang(){
-  document.getElementById('lbl-summary').textContent=t().summary;
-  document.getElementById('lbl-actions').textContent=t().actions;
-  document.getElementById('lbl-followup').textContent=t().followup;
-  document.getElementById('lbl-extra').textContent=t().extra;
-  document.getElementById('lbl-add-action').textContent=t().addAction;
-  document.getElementById('field-contact').placeholder=t().contactPh;
-  document.getElementById('field-summary').placeholder=t().summaryPh;
-  document.getElementById('field-followup').placeholder=t().followupPh;
-  document.getElementById('field-extra').placeholder=t().extraPh;
-  document.getElementById('lbl-empty-title').textContent=t().emptyTitle;
-  document.getElementById('lbl-empty-sub').textContent=t().emptySub;
-  document.getElementById('lbl-add-folder').textContent=t().addFolder;
-  document.getElementById('lbl-new-note').textContent=t().newNote;
-  document.getElementById('lbl-select-folder').textContent=t().selectFolder;
-  document.getElementById('lbl-ai-btn').textContent=t().aiBtn;
+  const set=(id,prop,val)=>{const el=document.getElementById(id);if(el)el[prop]=val;};
+  set('lbl-summary','textContent',t().summary);
+  set('lbl-actions','textContent',t().actions);
+  set('lbl-followup','textContent',t().followup);
+  set('lbl-extra','textContent',t().extra);
+  set('lbl-add-action','textContent',t().addAction);
+  set('field-contact','placeholder',t().contactPh);
+  set('field-summary','placeholder',t().summaryPh);
+  set('field-followup','placeholder',t().followupPh);
+  set('field-extra','placeholder',t().extraPh);
+  set('lbl-empty-title','textContent',t().emptyTitle);
+  set('lbl-empty-sub','textContent',t().emptySub);
+  set('lbl-add-folder','textContent',t().addFolder);
+  set('lbl-new-note','textContent',t().newNote);
+  set('lbl-select-folder','textContent',t().selectFolder);
+  set('lbl-ai-btn','textContent',t().aiBtn);
   updateSyncLabel();
 }
 function updateSyncLabel(){

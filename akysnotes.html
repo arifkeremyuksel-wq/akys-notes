@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKY's Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0e0f11;--surface:#16181c;--surface2:#1e2026;--surface3:#252830;--border:#2a2d35;--accent:#e8ff47;--accent2:#47c4ff;--text:#f0f1f3;--text2:#8b8f9a;--text3:#555a66;--red:#ff5c5c;--green:#47ffb0;--orange:#ffaa47;--purple:#c47fff;--radius:10px;}
+.light{--bg:#f0f0ec;--surface:#fff;--surface2:#f5f5f1;--surface3:#e8e8e4;--border:#ddddd8;--accent:#1a1a1a;--accent2:#0055cc;--text:#111;--text2:#666660;--text3:#aaa;--red:#cc2200;--green:#007744;--orange:#cc7700;--purple:#7733cc;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;transition:background .3s,color .3s;}
+.app{display:flex;height:100vh;}
+
+/* PANELS */
+.panel-folders{width:200px;min-width:200px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.panel-folders-header{padding:20px 16px 14px;border-bottom:1px solid var(--border);}
+.logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-.5px;display:flex;align-items:center;gap:7px;}
+.logo-dot{width:7px;height:7px;background:var(--accent);border-radius:50%;}
+.folder-list{flex:1;overflow-y:auto;padding:8px;}
+.folder-list::-webkit-scrollbar,.entity-list::-webkit-scrollbar,.notes-list::-webkit-scrollbar,.editor-wrap::-webkit-scrollbar,.ai-modal-body::-webkit-scrollbar{width:3px;}
+.folder-list::-webkit-scrollbar-thumb,.entity-list::-webkit-scrollbar-thumb,.notes-list::-webkit-scrollbar-thumb,.editor-wrap::-webkit-scrollbar-thumb,.ai-modal-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.folder-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent;transition:all .15s;margin-bottom:2px;position:relative;}
+.folder-item:hover{background:var(--surface2);}
+.folder-item.active{background:var(--surface2);border-color:var(--border);}
+.folder-icon{font-size:15px;min-width:20px;text-align:center;}
+.folder-name{font-size:13px;font-weight:500;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.folder-count{font-size:10px;font-weight:700;background:var(--surface3);color:var(--text2);padding:2px 6px;border-radius:10px;min-width:20px;text-align:center;}
+.folder-actions{display:none;gap:2px;position:absolute;right:6px;top:50%;transform:translateY(-50%);}
+.folder-item:hover .folder-actions{display:flex;}
+.folder-item:hover .folder-count{display:none;}
+.icon-btn{background:var(--surface3);border:none;color:var(--text2);width:22px;height:22px;border-radius:5px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.icon-btn:hover{color:var(--text);background:var(--border);}
+.icon-btn.danger:hover{color:var(--red);}
+.add-folder-btn{margin:8px;padding:9px 10px;border:1px dashed var(--border);background:transparent;color:var(--text2);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:left;width:calc(100% - 16px);transition:all .15s;display:flex;align-items:center;gap:6px;}
+.add-folder-btn:hover{color:var(--text);border-color:var(--text2);}
+.panel-footer{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;}
+.footer-btn{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:7px;padding:7px;font-size:12px;cursor:pointer;transition:all .15s;text-align:center;font-family:'DM Sans',sans-serif;min-width:36px;}
+.footer-btn:hover{color:var(--text);}
+.panel-entities{width:210px;min-width:210px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.panel-header{padding:14px 14px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.panel-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.btn-add{background:var(--accent);color:#0e0f11;border:none;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:opacity .15s;}
+.btn-add:hover{opacity:.85;}
+.entity-list{flex:1;overflow-y:auto;padding:8px;}
+.entity-item{padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid transparent;transition:all .15s;margin-bottom:2px;position:relative;}
+.entity-item:hover{background:var(--surface2);}
+.entity-item.active{background:var(--surface2);border-color:var(--border);}
+.entity-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;display:flex;align-items:center;justify-content:space-between;}
+.entity-meta{font-size:11px;color:var(--text2);}
+.entity-badge{background:var(--red);color:white;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.entity-item-actions{display:none;position:absolute;right:8px;top:10px;gap:3px;}
+.entity-item:hover .entity-item-actions{display:flex;}
+.panel-notes{width:190px;min-width:190px;background:var(--surface2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.notes-list{flex:1;overflow-y:auto;padding:8px;}
+.note-date-item{padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid transparent;transition:all .15s;margin-bottom:3px;position:relative;}
+.note-date-item:hover{background:var(--surface3);}
+.note-date-item.active{background:var(--surface3);border-color:var(--border);}
+.note-date-label{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.note-date-preview{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.note-action-hint{font-size:10px;color:var(--red);font-weight:600;margin-top:3px;}
+.note-sync-badge{font-size:9px;color:var(--orange);font-weight:600;margin-top:2px;}
+.note-item-btns{display:none;position:absolute;right:6px;top:8px;}
+.note-date-item:hover .note-item-btns{display:flex;}
+.btn-new-note{margin:8px;padding:9px 12px;border:1px dashed var(--border);background:transparent;color:var(--text2);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:left;width:calc(100% - 16px);transition:all .15s;display:flex;align-items:center;gap:6px;}
+.btn-new-note:hover{color:var(--text);border-color:var(--text2);}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+.topbar{padding:13px 24px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-left{display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden;}
+.breadcrumb{font-size:13px;color:var(--text2);display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;}
+.bc-sep{color:var(--text3);}
+.bc-cur{color:var(--text);font-weight:600;}
+.topbar-right{display:flex;gap:7px;flex-shrink:0;align-items:center;}
+.topbar-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:7px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.topbar-btn:hover{color:var(--text);}
+.menu-btn{display:none;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:6px 10px;font-size:15px;cursor:pointer;}
+.editor-wrap{flex:1;overflow-y:auto;padding:32px 40px;}
+
+/* EMPTY */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;color:var(--text2);gap:10px;}
+.empty-icon{font-size:44px;opacity:.25;}
+.empty-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--text);opacity:.4;}
+.empty-sub{font-size:13px;max-width:240px;line-height:1.6;}
+
+/* EDITOR */
+.editor-company{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;background:transparent;border:none;color:var(--text);width:100%;outline:none;margin-bottom:6px;letter-spacing:-.5px;}
+.editor-company::placeholder{color:var(--border);}
+.date-row{display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+.date-row input[type=date]{background:transparent;border:none;color:var(--text2);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;}
+.meta-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;}
+.meta-input:focus{border-color:var(--text2);}
+.divider{height:1px;background:var(--border);margin:18px 0;}
+.section{margin-bottom:20px;}
+.section-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.section-label::before{content:'';width:3px;height:11px;border-radius:2px;background:var(--accent2);display:inline-block;}
+.section-label.sl-actions::before{background:var(--accent);}
+.section-label.sl-followup::before{background:var(--red);}
+.section-label.sl-extra::before{background:var(--purple);}
+textarea.field{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:13px 15px;font-size:14px;font-family:'DM Sans',sans-serif;line-height:1.7;resize:vertical;outline:none;min-height:90px;transition:border-color .15s;}
+textarea.field:focus{border-color:var(--text2);}
+textarea.field::placeholder{color:var(--text3);}
+.actions-list{display:flex;flex-direction:column;gap:6px;}
+.action-item{display:flex;align-items:flex-start;gap:9px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:9px 12px;transition:border-color .15s;}
+.action-item:hover{border-color:var(--text3);}
+.action-check{width:17px;height:17px;min-width:17px;border-radius:4px;border:2px solid var(--border);background:transparent;cursor:pointer;margin-top:2px;transition:all .15s;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--bg);}
+.action-check.done{background:var(--green);border-color:var(--green);}
+.action-txt{flex:1;font-size:13px;color:var(--text);background:transparent;border:none;outline:none;font-family:'DM Sans',sans-serif;line-height:1.5;resize:none;width:100%;}
+.action-txt.crossed{text-decoration:line-through;color:var(--text2);}
+.action-own{font-size:11px;color:var(--accent2);font-weight:500;min-width:50px;text-align:right;background:transparent;border:none;outline:none;font-family:'DM Sans',sans-serif;}
+.btn-add-action{background:transparent;border:1px dashed var(--border);color:var(--text2);border-radius:9px;padding:9px 12px;font-size:12px;cursor:pointer;width:100%;text-align:left;font-family:'DM Sans',sans-serif;transition:all .15s;display:flex;align-items:center;gap:7px;}
+.btn-add-action:hover{color:var(--text);border-color:var(--text2);}
+.save-bar{padding:11px 24px;border-top:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.save-status{font-size:12px;color:var(--text2);}
+.save-btns{display:flex;gap:8px;}
+.btn-save{background:var(--accent);color:#0e0f11;padding:7px 18px;border-radius:7px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;}
+.btn-save:hover{opacity:.85;}
+.btn-del{background:transparent;color:var(--red);padding:7px 12px;border-radius:7px;border:1px solid rgba(255,92,92,.3);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .15s;}
+.btn-del:hover{background:rgba(255,92,92,.1);}
+
+/* SYNC STATUS BAR */
+.sync-bar{padding:6px 24px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);flex-shrink:0;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0;}
+.sync-dot.online{background:var(--green);}
+.sync-dot.syncing{background:var(--orange);animation:pulse 1s ease infinite;}
+.sync-dot.offline{background:var(--red);}
+.sync-dot.conflict{background:var(--orange);}
+.sync-pending-count{margin-left:auto;font-size:10px;font-weight:600;color:var(--orange);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* MODALS */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;width:320px;box-shadow:0 20px 60px rgba(0,0,0,.4);}
+.modal-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;margin-bottom:16px;}
+.modal-input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 13px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;margin-bottom:12px;}
+.modal-input:focus{border-color:var(--text2);}
+.emoji-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.emoji-opt{width:33px;height:33px;border-radius:8px;background:var(--surface2);border:2px solid transparent;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.emoji-opt.sel{border-color:var(--accent2);background:var(--surface3);}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;}
+.modal-cancel{background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:7px;padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;}
+.modal-ok{background:var(--accent);color:#0e0f11;border:none;border-radius:7px;padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+
+/* CONFLICT MODAL */
+.conflict-modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(680px,96vw);max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.5);}
+.conflict-head{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.conflict-icon{font-size:20px;}
+.conflict-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;}
+.conflict-sub{font-size:12px;color:var(--text2);margin-top:2px;}
+.conflict-body{padding:18px 22px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px;}
+.conflict-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.conflict-col{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;}
+.conflict-col.winner{border-color:var(--green);}
+.conflict-col-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;display:flex;align-items:center;justify-content:space-between;}
+.conflict-col-label span{color:var(--text2);}
+.conflict-col-label .device{color:var(--accent2);font-size:10px;}
+.conflict-field{font-size:12px;color:var(--text);line-height:1.6;}
+.conflict-field-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:3px;}
+.conflict-choose{display:flex;gap:8px;padding-top:4px;border-top:1px solid var(--border);margin-top:4px;}
+.btn-choose{flex:1;background:var(--surface3);border:1px solid var(--border);color:var(--text2);border-radius:7px;padding:7px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;font-weight:600;}
+.btn-choose:hover{color:var(--text);border-color:var(--text2);}
+.btn-choose.pick-local{border-color:var(--accent2);color:var(--accent2);}
+.btn-choose.pick-remote{border-color:var(--green);color:var(--green);}
+.conflict-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;align-items:center;}
+.conflict-hint{font-size:11px;color:var(--text2);flex:1;}
+
+/* SETUP MODAL */
+.setup-modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(500px,96vw);max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.5);}
+.setup-head{padding:22px 24px 16px;border-bottom:1px solid var(--border);}
+.setup-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:4px;}
+.setup-sub{font-size:13px;color:var(--text2);line-height:1.6;}
+.setup-body{padding:20px 24px;display:flex;flex-direction:column;gap:16px;}
+.setup-field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:6px;}
+.setup-input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 13px;font-size:13px;font-family:monospace;outline:none;transition:border-color .15s;}
+.setup-input:focus{border-color:var(--accent2);}
+.setup-hint{font-size:11px;color:var(--text2);margin-top:5px;line-height:1.5;}
+.setup-hint a{color:var(--accent2);text-decoration:none;}
+.setup-hint a:hover{text-decoration:underline;}
+.setup-step{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.setup-step-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:7px;}
+.step-num{background:var(--accent2);color:#0e0f11;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.setup-code{background:var(--surface3);border:1px solid var(--border);border-radius:7px;padding:10px 12px;font-family:monospace;font-size:11px;color:var(--accent2);line-height:1.7;white-space:pre-wrap;word-break:break-all;}
+.setup-foot{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+.btn-setup-save{background:var(--accent);color:#0e0f11;border:none;border-radius:8px;padding:9px 20px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-setup-skip{background:transparent;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:9px 16px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;}
+
+/* AI BUTTON + MODAL */
+.btn-ai{background:linear-gradient(135deg,rgba(232,255,71,.12),rgba(71,196,255,.12));border:1px solid rgba(71,196,255,.35);color:var(--accent2);border-radius:7px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:flex;align-items:center;gap:5px;}
+.btn-ai:hover{border-color:var(--accent2);background:rgba(71,196,255,.2);}
+.ai-pulse{width:6px;height:6px;background:var(--accent2);border-radius:50%;animation:pulse 2s ease infinite;}
+.ai-modal-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(560px,96vw);max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.5);}
+.ai-modal-head{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.ai-modal-ttl{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px;}
+.ai-badge{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0e0f11;font-size:9px;font-weight:800;padding:3px 7px;border-radius:5px;letter-spacing:.5px;}
+.ai-x{background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:7px;width:26px;height:26px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
+.ai-x:hover{color:var(--text);}
+.ai-modal-body{padding:18px 22px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px;}
+.ai-lbl{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2);margin-bottom:6px;}
+.ai-raw{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:12px 14px;font-size:14px;font-family:'DM Sans',sans-serif;line-height:1.7;resize:none;outline:none;min-height:110px;transition:border-color .15s;}
+.ai-raw:focus{border-color:var(--accent2);}
+.ai-raw::placeholder{color:var(--text3);}
+.ai-key-row{display:flex;gap:8px;align-items:center;}
+.ai-key{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:13px;font-family:monospace;outline:none;transition:border-color .15s;}
+.ai-key:focus{border-color:var(--accent2);}
+.ai-key-note{font-size:11px;color:var(--text2);line-height:1.5;}
+.ai-key-note a{color:var(--accent2);text-decoration:none;}
+.btn-ai-run{background:var(--accent2);color:#0e0f11;border:none;border-radius:8px;padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s;}
+.btn-ai-run:hover{opacity:.85;}
+.btn-ai-run:disabled{opacity:.4;cursor:not-allowed;}
+.ai-loading{display:flex;align-items:center;gap:10px;color:var(--text2);font-size:13px;padding:16px 0;}
+.ai-spinner{width:17px;height:17px;border:2px solid var(--border);border-top-color:var(--accent2);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-result{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:12px;}
+.ai-rs-lbl{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text2);margin-bottom:4px;}
+.ai-rs-txt{font-size:13px;color:var(--text);line-height:1.6;}
+.ai-rs-action{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--text);}
+.ai-rs-action:last-child{border-bottom:none;}
+.ai-rs-owner{font-size:11px;color:var(--accent2);margin-left:auto;white-space:nowrap;}
+.ai-error{background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.3);border-radius:8px;padding:12px;font-size:13px;color:var(--red);line-height:1.5;}
+.ai-modal-foot{padding:12px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+.btn-ai-apply{background:var(--accent);color:#0e0f11;border:none;border-radius:8px;padding:8px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;}
+.btn-ai-apply:hover{opacity:.85;}
+.btn-ai-apply:disabled{opacity:.35;cursor:not-allowed;}
+
+@media(max-width:860px){
+  .panel-folders{position:fixed;left:0;top:0;bottom:0;z-index:160;transform:translateX(-100%);transition:transform .3s;}
+  .panel-folders.open{transform:translateX(0);}
+  .panel-entities{position:fixed;left:200px;top:0;bottom:0;z-index:155;transform:translateX(-410px);transition:transform .3s;}
+  .panel-entities.open{transform:translateX(0);}
+  .panel-notes{position:fixed;left:0;right:0;top:0;bottom:0;z-index:150;transform:translateX(-100%);transition:transform .3s;width:100%;}
+  .panel-notes.open{transform:translateX(0);}
+  .menu-btn{display:block;}
+  .editor-wrap{padding:20px;}
+  .mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:140;}
+  .mob-overlay.show{display:block;}
+  .conflict-cols{grid-template-columns:1fr;}
+  .btn-ai span:last-child{display:none;}
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeUp .2s ease;}
+</style>
+</head>
+<body>
+
+<div class="mob-overlay" id="mob-overlay" onclick="closeAllPanels()"></div>
+
+<!-- Folder Modal -->
+<div class="modal-overlay" id="folder-modal">
+  <div class="modal">
+    <div class="modal-title" id="fm-title">Yeni Klasör</div>
+    <input class="modal-input" id="fm-name" placeholder="Klasör adı..."/>
+    <div class="emoji-row" id="fm-emojis"></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeFolderModal()">İptal</button>
+      <button class="modal-ok" onclick="confirmFolderModal()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Entity Modal -->
+<div class="modal-overlay" id="entity-modal">
+  <div class="modal">
+    <div class="modal-title" id="em-title">Yeni Ekle</div>
+    <input class="modal-input" id="em-name" placeholder="Adı girin..."/>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeEntityModal()">İptal</button>
+      <button class="modal-ok" onclick="confirmEntityModal()">Ekle</button>
+    </div>
+  </div>
+</div>
+
+<!-- AI Modal -->
+<div class="modal-overlay" id="ai-modal">
+  <div class="ai-modal-box">
+    <div class="ai-modal-head">
+      <div class="ai-modal-ttl"><span class="ai-badge">AI</span><span id="ai-ttl">Ham Notu Yapılandır</span></div>
+      <button class="ai-x" onclick="closeAIModal()">✕</button>
+    </div>
+    <div class="ai-modal-body">
+      <div>
+        <div class="ai-lbl" id="ai-lbl-raw">Ham Not</div>
+        <textarea class="ai-raw" id="ai-raw-input" rows="6" placeholder="Görüşmeden çıktıktan sonra aklındakileri buraya dök..."></textarea>
+      </div>
+      <div>
+        <div class="ai-lbl">Anthropic API Key</div>
+        <div class="ai-key-row">
+          <input class="ai-key" type="password" id="ai-api-key" placeholder="sk-ant-api03-..."/>
+          <button class="btn-ai-run" onclick="runAI()" id="btn-run-ai">✦ Yapılandır</button>
+        </div>
+        <div class="ai-key-note" id="ai-key-note">Key yalnızca bu sekme oturumunda saklanır. <a href="https://console.anthropic.com/settings/keys" target="_blank">Ücretsiz al →</a></div>
+      </div>
+      <div id="ai-result-area"></div>
+    </div>
+    <div class="ai-modal-foot">
+      <button class="modal-cancel" onclick="closeAIModal()" id="ai-cancel-btn">İptal</button>
+      <button class="btn-ai-apply" onclick="applyAIResult()" id="btn-apply-ai" disabled>✓ Nota Uygula</button>
+    </div>
+  </div>
+</div>
+
+<!-- Conflict Modal -->
+<div class="modal-overlay" id="conflict-modal">
+  <div class="conflict-modal">
+    <div class="conflict-head">
+      <div class="conflict-icon">⚡</div>
+      <div>
+        <div class="conflict-title" id="conflict-title">Çakışma Tespit Edildi</div>
+        <div class="conflict-sub" id="conflict-sub">Aynı not farklı cihazlarda değiştirilmiş. Hangisini kullanmak istiyorsun?</div>
+      </div>
+    </div>
+    <div class="conflict-body">
+      <div class="conflict-cols" id="conflict-cols"></div>
+    </div>
+    <div class="conflict-foot">
+      <div class="conflict-hint" id="conflict-hint">Seçimden sonra diğer versiyon silinir.</div>
+      <button class="modal-cancel" onclick="resolveConflict('merge')">🔀 Her ikisini birleştir</button>
+      <button class="modal-ok" onclick="closeConflictModal()">Şimdi değil</button>
+    </div>
+  </div>
+</div>
+
+<!-- Setup Modal -->
+<div class="modal-overlay" id="setup-modal">
+  <div class="setup-modal">
+    <div class="setup-head">
+      <div class="setup-title">☁️ Bulut Senkronu Kur</div>
+      <div class="setup-sub">Supabase bilgilerini girerek tüm cihazlarda gerçek zamanlı senkron aktifleştir. Ücretsiz.</div>
+    </div>
+    <div class="setup-body">
+      <div class="setup-step">
+        <div class="setup-step-title"><span class="step-num">1</span> Supabase'de proje aç</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6;">
+          <a href="https://supabase.com" target="_blank" style="color:var(--accent2);">supabase.com</a> → New Project → Proje oluşturduktan sonra
+          <b>Settings › API</b>'den <code style="background:var(--surface3);padding:1px 5px;border-radius:3px;">Project URL</code> ve <code style="background:var(--surface3);padding:1px 5px;border-radius:3px;">anon public key</code>'i kopyala.
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="setup-step-title"><span class="step-num">2</span> SQL ile tabloları oluştur</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">Supabase SQL Editor'a git ve aşağıdaki komutu çalıştır:</div>
+        <div class="setup-code" id="sql-code">-- AKY's Notes tabloları
+create table if not exists fn_notes (
+  id text primary key,
+  entity_id text not null,
+  date text,
+  contact text,
+  summary text,
+  followup text,
+  extra text,
+  actions jsonb default '[]',
+  updated_at timestamptz default now(),
+  created_at timestamptz default now()
+);
+create table if not exists fn_entities (
+  id text primary key,
+  folder_id text not null,
+  name text not null,
+  updated_at timestamptz default now()
+);
+create table if not exists fn_folders (
+  id text primary key,
+  name text not null,
+  icon text default '📁',
+  updated_at timestamptz default now()
+);
+-- RLS: sadece sen erişebilsin (opsiyonel ama önerilir)
+alter table fn_notes enable row level security;
+alter table fn_entities enable row level security;
+alter table fn_folders enable row level security;</div>
+        <button onclick="copySQL()" style="margin-top:8px;background:var(--surface3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;">📋 SQL'i Kopyala</button>
+      </div>
+      <div class="setup-field">
+        <label>Project URL</label>
+        <input class="setup-input" id="sb-url" placeholder="https://xxxxxxxxxxxx.supabase.co"/>
+        <div class="setup-hint">Settings › API › Project URL</div>
+      </div>
+      <div class="setup-field">
+        <label>Anon Public Key</label>
+        <input class="setup-input" id="sb-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."/>
+        <div class="setup-hint">Settings › API › anon public key</div>
+      </div>
+    </div>
+    <div class="setup-foot">
+      <button class="btn-setup-skip" onclick="closeSetupModal()">Şimdi değil</button>
+      <button class="btn-setup-save" onclick="saveSupabaseConfig()">Bağlan ve Senkronize Et</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app">
+  <!-- P1: FOLDERS -->
+  <div class="panel-folders" id="panel-folders">
+    <div class="panel-folders-header">
+      <div class="logo"><span class="logo-dot"></span>AKY's Notes</div>
+    </div>
+    <div class="folder-list" id="folder-list"></div>
+    <button class="add-folder-btn" onclick="openNewFolder()">＋ <span id="lbl-add-folder">Klasör ekle</span></button>
+    <div class="panel-footer">
+      <button class="footer-btn" onclick="toggleLang()" id="lang-btn">EN</button>
+      <button class="footer-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+      <button class="footer-btn" onclick="openSetupModal()" title="Sync ayarları">☁️</button>
+    </div>
+  </div>
+
+  <!-- P2: ENTITIES -->
+  <div class="panel-entities" id="panel-entities">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span id="p2-icon">📁</span>
+        <span id="p2-name" style="color:var(--text);font-size:13px;text-transform:none;letter-spacing:0;font-family:'Syne',sans-serif;">—</span>
+      </div>
+      <button class="btn-add" onclick="openNewEntity()">＋</button>
+    </div>
+    <div class="entity-list" id="entity-list">
+      <div class="empty-state" style="height:auto;padding:28px 0;">
+        <div class="empty-icon">👈</div>
+        <div class="empty-sub" id="lbl-select-folder">Bir klasör seçin</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- P3: DATE NOTES -->
+  <div class="panel-notes" id="panel-notes">
+    <div class="panel-header">
+      <div class="panel-title" style="text-transform:none;letter-spacing:0;">
+        <span id="p3-entity-name" style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);">Notlar</span>
+      </div>
+    </div>
+    <div class="notes-list" id="notes-list"></div>
+    <button class="btn-new-note" onclick="newNote()">＋ <span id="lbl-new-note">Yeni Not</span></button>
+  </div>
+
+  <!-- MAIN EDITOR -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" onclick="toggleMobileNav()">☰</button>
+        <div class="breadcrumb" id="breadcrumb"><span>AKY's Notes</span></div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-ai" onclick="openAIModal()" id="btn-ai-top" style="display:none;">
+          <span class="ai-pulse"></span><span id="lbl-ai-btn">✦ AI ile Yapılandır</span>
+        </button>
+        <button class="topbar-btn" onclick="toggleLang()" id="lang-btn2">EN</button>
+        <button class="topbar-btn" onclick="toggleTheme()" id="theme-btn2">🌙</button>
+      </div>
+    </div>
+
+    <!-- SYNC STATUS BAR -->
+    <div class="sync-bar" id="sync-bar">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-label">Yerel mod — ☁️ butonuna bas senkronu kur</span>
+      <span class="sync-pending-count" id="sync-pending" style="display:none;"></span>
+    </div>
+
+    <div class="editor-wrap">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">📋</div>
+        <div class="empty-title" id="lbl-empty-title">Not seç veya oluştur</div>
+        <div class="empty-sub" id="lbl-empty-sub">Sol panelden klasör › kayıt › not seçin.</div>
+      </div>
+      <div id="note-editor" style="display:none;" class="fade-in">
+        <input class="editor-company" id="field-company" readonly placeholder="Şirket / Kişi"/>
+        <div class="date-row">
+          <span>📅</span>
+          <input type="date" id="field-date"/>
+          <span style="color:var(--text3)">·</span>
+          <input class="meta-input" id="field-contact" placeholder="Kişi adı" style="padding:5px 9px;font-size:12px;background:transparent;border-color:transparent;"/>
+        </div>
+        <div class="divider"></div>
+        <div class="section">
+          <div class="section-label" id="lbl-summary">Görüşme Özeti</div>
+          <textarea class="field" id="field-summary" rows="5" placeholder="Neler konuşuldu?..."></textarea>
+        </div>
+        <div class="section">
+          <div class="section-label sl-actions" id="lbl-actions">Aksiyonlar</div>
+          <div class="actions-list" id="actions-list"></div>
+          <button class="btn-add-action" onclick="addAction()">＋ <span id="lbl-add-action">Aksiyon ekle</span></button>
+        </div>
+        <div class="section">
+          <div class="section-label sl-followup" id="lbl-followup">Takip / Hatırlatıcı</div>
+          <textarea class="field" id="field-followup" rows="3" placeholder="Bir sonraki görüşmede sorulacaklar..."></textarea>
+        </div>
+        <div class="section">
+          <div class="section-label sl-extra" id="lbl-extra">Ek Notlar</div>
+          <textarea class="field" id="field-extra" rows="3" placeholder="Genel izlenimler, bağlam..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="save-bar" id="save-bar" style="display:none;">
+      <span class="save-status" id="save-status">—</span>
+      <div class="save-btns">
+        <button class="btn-del" onclick="deleteCurrentNote()" id="btn-del">Sil</button>
+        <button class="btn-save" onclick="saveNote()" id="btn-save">Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let db = JSON.parse(localStorage.getItem('fn4_db')||'null');
+let lang = localStorage.getItem('fn4_lang')||'tr';
+let theme = localStorage.getItem('fn4_theme')||'dark';
+let aFolder=null,aEntity=null,aNote=null;
+let folderModalMode=null,renameFId=null,selEmoji='📁';
+let aiResult=null;
+
+// Supabase config
+let SB_URL = localStorage.getItem('fn4_sb_url')||'';
+let SB_KEY = localStorage.getItem('fn4_sb_key')||'';
+let isOnline = navigator.onLine;
+let syncQueue = JSON.parse(localStorage.getItem('fn4_queue')||'[]'); // offline queue
+let isSyncing = false;
+let pendingConflicts = [];
+
+const EMOJIS=['📁','🏢','🤝','💡','⚙️','📊','🎯','🔧','📝','🌐','💼','🔑'];
+
+// ═══════════════════════════════════════════════════════════
+// SEED DATA
+// ═══════════════════════════════════════════════════════════
+if(!db){
+  db={
+    folders:[
+      {id:'f1',name:'Customers',icon:'🏢',updated_at:now()},
+      {id:'f2',name:'Partners',icon:'🤝',updated_at:now()},
+      {id:'f3',name:'Ideas',icon:'💡',updated_at:now()},
+      {id:'f4',name:'Internal',icon:'⚙️',updated_at:now()},
+    ],
+    entities:[
+      {id:'e1',folderId:'f1',name:'Turkcell',updated_at:now()},
+      {id:'e2',folderId:'f1',name:'Vodafone TR',updated_at:now()},
+      {id:'e3',folderId:'f2',name:'Softline',updated_at:now()},
+    ],
+    notes:[
+      {id:'n1',entityId:'e1',date:'2026-03-07',contact:'Ali Yılmaz',summary:'Q2 lisans yenileme görüşüldü. Rakip X teklifi masada, fiyat baskısı var. Karar Q3\'te.',followup:'ROI hesabı sunmak gerekiyor. CTO onayı lazım.',extra:'Ali Bey karar verici değil.',actions:[{id:'a1',text:'ROI sunumu hazırla',owner:'Ben',done:false},{id:'a2',text:'CTO ile toplantı ayarla',owner:'Ali B.',done:false}],updated_at:now()},
+      {id:'n2',entityId:'e1',date:'2026-02-14',contact:'Ali Yılmaz',summary:'İlk keşif görüşmesi. EAM modülü tanıtıldı.',followup:'Demo ayarlanacak.',extra:'',actions:[{id:'a3',text:'Demo tarihi belirle',owner:'Ben',done:true}],updated_at:now()},
+      {id:'n3',entityId:'e2',date:'2026-03-05',contact:'Selin Kaya',summary:'Yeni EAM modülü demo yapıldı. Teknik ekip ilgili, bütçe onayı bekleniyor.',followup:'Bütçe onay tarihini takip et.',extra:'',actions:[{id:'a4',text:'POC teklifi gönder',owner:'Ben',done:true}],updated_at:now()},
+      {id:'n4',entityId:'e3',date:'2026-03-03',contact:'Mehmet Demir',summary:'Yeni bölgelerde distribütörlük potansiyeli var.',followup:'Partnership agreement taslağı gönderilecek.',extra:'',actions:[{id:'a5',text:'Sözleşme taslağı hazırla',owner:'Hukuk',done:false}],updated_at:now()},
+    ]
+  };
+  sdb();
+}
+function now(){return new Date().toISOString();}
+function sdb(){localStorage.setItem('fn4_db',JSON.stringify(db));}
+function saveQueue(){localStorage.setItem('fn4_queue',JSON.stringify(syncQueue));}
+
+// ═══════════════════════════════════════════════════════════
+// TRANSLATIONS
+// ═══════════════════════════════════════════════════════════
+const TR={
+  addFolder:'Klasör ekle',newNote:'Yeni Not',save:'Kaydet',del:'Sil',
+  saved:'Kaydedildi ✓',unsaved:'Kaydedilmemiş değişiklikler',
+  selectFolder:'Bir klasör seçin',addFolderTitle:'Yeni Klasör',
+  renameFolderTitle:'Klasörü Yeniden Adlandır',folderPh:'Klasör adı...',
+  addEntityTitle:'Yeni Ekle',entityPh:'Adı girin...',cancel:'İptal',ok:'Kaydet',
+  emptyTitle:'Not seç veya oluştur',emptySub:'Sol panelden klasör › kayıt › not seçin.',
+  summary:'Görüşme Özeti',actions:'Aksiyonlar',followup:'Takip / Hatırlatıcı',extra:'Ek Notlar',
+  addAction:'Aksiyon ekle',contactPh:'Kişi adı',
+  summaryPh:'Neler konuşuldu? Ana noktalar...',followupPh:'Bir sonraki görüşmede sorulacaklar...',
+  extraPh:'Genel izlenimler, bağlam...',actionPh:'Aksiyon...',ownerPh:'Sahip',
+  delConfirm:'Bu notu silmek istediğine emin misin?',
+  delFolderConfirm:'Bu klasörü ve tüm içeriğini silmek istediğine emin misin?',
+  delEntityConfirm:'Bu kaydı ve tüm notlarını silmek istediğine emin misin?',
+  noNotes:'Henüz not yok',nc:n=>`${n} not`,
+  aiBtn:'✦ AI ile Yapılandır',aiTitle:'Ham Notu Yapılandır',
+  aiRawLbl:'Ham Not',aiRawPh:'Görüşmeden çıktıktan sonra aklındakileri buraya dök...',
+  aiKeyNote:'Key yalnızca bu sekme oturumunda saklanır.',aiRun:'✦ Yapılandır',
+  aiApply:'✓ Nota Uygula',aiCancel:'İptal',
+  aiSummaryLbl:'Özet',aiActionsLbl:'Aksiyonlar',aiFollowupLbl:'Takip',aiExtraLbl:'Ek Notlar',
+  aiNoActions:'Aksiyon çıkarılmadı',aiProcessing:'Yapılandırılıyor...',
+  syncLocal:'Yerel mod — ☁️ ile senkronu kur',
+  syncOnline:'Senkronize',syncSyncing:'Senkronize ediliyor...',
+  syncOffline:'Çevrimdışı — değişiklikler kuyrukta bekliyor',
+  syncPending:n=>`${n} değişiklik bekliyor`,
+  conflictTitle:'Çakışma Tespit Edildi',
+  conflictSub:'Aynı not farklı cihazlarda değiştirilmiş. Hangisini kullanmak istiyorsun?',
+  conflictLocal:'Bu Cihaz',conflictRemote:'Diğer Cihaz',
+  conflictChooseLocal:'Bu cihazı kullan',conflictChooseRemote:'Diğer cihazı kullan',
+  conflictMerge:'Her ikisini birleştir',conflictLater:'Şimdi değil',
+  conflictHint:'Seçimden sonra diğer versiyon silinir. Birleştir seçeneği her iki versiyonu ayrı not olarak saklar.',
+  months:['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'],
+  monthsShort:['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'],
+};
+const EN={
+  addFolder:'Add folder',newNote:'New Note',save:'Save',del:'Delete',
+  saved:'Saved ✓',unsaved:'Unsaved changes',
+  selectFolder:'Select a folder',addFolderTitle:'New Folder',
+  renameFolderTitle:'Rename Folder',folderPh:'Folder name...',
+  addEntityTitle:'Add New',entityPh:'Enter name...',cancel:'Cancel',ok:'Save',
+  emptyTitle:'Select or create a note',emptySub:'Choose folder › entity › note from the left.',
+  summary:'Meeting Summary',actions:'Actions',followup:'Follow-up / Reminder',extra:'Additional Notes',
+  addAction:'Add action',contactPh:'Contact name',
+  summaryPh:'What was discussed? Key points...',followupPh:'Questions for next meeting...',
+  extraPh:'General impressions, context...',actionPh:'Action...',ownerPh:'Owner',
+  delConfirm:'Delete this note?',
+  delFolderConfirm:'Delete this folder and all its contents?',
+  delEntityConfirm:'Delete this entry and all its notes?',
+  noNotes:'No notes yet',nc:n=>`${n} note${n!==1?'s':''}`,
+  aiBtn:'✦ AI Structure',aiTitle:'Structure Raw Note',
+  aiRawLbl:'Raw Note',aiRawPh:'Dump your meeting notes here. Messy is fine...',
+  aiKeyNote:'Key stored only in this browser session.',aiRun:'✦ Structure',
+  aiApply:'✓ Apply to Note',aiCancel:'Cancel',
+  aiSummaryLbl:'Summary',aiActionsLbl:'Actions',aiFollowupLbl:'Follow-up',aiExtraLbl:'Extra Notes',
+  aiNoActions:'No actions extracted',aiProcessing:'Structuring...',
+  syncLocal:'Local mode — tap ☁️ to set up sync',
+  syncOnline:'Synced',syncSyncing:'Syncing...',
+  syncOffline:'Offline — changes queued',
+  syncPending:n=>`${n} change${n!==1?'s':''} pending`,
+  conflictTitle:'Conflict Detected',
+  conflictSub:'Same note edited on different devices. Which version do you want to keep?',
+  conflictLocal:'This Device',conflictRemote:'Other Device',
+  conflictChooseLocal:'Use this device',conflictChooseRemote:'Use other device',
+  conflictMerge:'Merge both',conflictLater:'Decide later',
+  conflictHint:'The other version will be deleted. Merge keeps both as separate notes.',
+  months:['January','February','March','April','May','June','July','August','September','October','November','December'],
+  monthsShort:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+};
+const t=()=>lang==='tr'?TR:EN;
+
+// ═══════════════════════════════════════════════════════════
+// DATES
+// ═══════════════════════════════════════════════════════════
+function fd(d,full=false){
+  if(!d)return'';
+  const dt=new Date(d+'T12:00:00');
+  const m=full?t().months:t().monthsShort;
+  return full?`${dt.getDate()} ${m[dt.getMonth()]} ${dt.getFullYear()}`:`${dt.getDate()} ${m[dt.getMonth()]}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SUPABASE HELPERS
+// ═══════════════════════════════════════════════════════════
+async function sbFetch(path, opts={}){
+  if(!SB_URL||!SB_KEY) return null;
+  const res = await fetch(SB_URL+'/rest/v1/'+path, {
+    ...opts,
+    headers:{
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer '+SB_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer||'',
+      ...(opts.headers||{})
+    }
+  });
+  if(!res.ok) return null;
+  const ct = res.headers.get('content-type')||'';
+  return ct.includes('json') ? res.json() : null;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SYNC ENGINE
+// ═══════════════════════════════════════════════════════════
+function setSyncStatus(status, msg){
+  const dot=document.getElementById('sync-dot');
+  const lbl=document.getElementById('sync-label');
+  dot.className='sync-dot '+status;
+  lbl.textContent=msg;
+}
+
+function updatePendingBadge(){
+  const el=document.getElementById('sync-pending');
+  if(syncQueue.length>0){
+    el.style.display='';
+    el.textContent=t().syncPending(syncQueue.length);
+  } else {
+    el.style.display='none';
+  }
+}
+
+// Push a local change to queue
+function queueChange(type, table, data){
+  // Remove any existing queued change for same id
+  syncQueue = syncQueue.filter(q=>!(q.table===table&&q.data.id===data.id));
+  syncQueue.push({type, table, data, ts:now()});
+  saveQueue();
+  updatePendingBadge();
+  if(isOnline && SB_URL) syncNow();
+}
+
+// Full sync: push queue → pull remote → detect conflicts
+async function syncNow(){
+  if(!SB_URL||!SB_KEY||isSyncing) return;
+  isSyncing=true;
+  setSyncStatus('syncing', t().syncSyncing);
+
+  try {
+    // 1. Push offline queue to Supabase
+    for(const op of [...syncQueue]){
+      let ok=false;
+      if(op.type==='upsert'){
+        const row = toRow(op.table, op.data);
+        const r = await sbFetch(op.table+'?id=eq.'+op.data.id, {
+          method:'DELETE', prefer:'return=minimal'
+        });
+        const r2 = await sbFetch(op.table, {
+          method:'POST', prefer:'return=minimal',
+          body: JSON.stringify(row)
+        });
+        ok = r2!==null || r!==null;
+      } else if(op.type==='delete'){
+        await sbFetch(op.table+'?id=eq.'+op.data.id, {method:'DELETE'});
+        ok=true;
+      }
+      if(ok) syncQueue=syncQueue.filter(q=>q!==op);
+    }
+    saveQueue();
+    updatePendingBadge();
+
+    // 2. Pull remote data
+    const [rNotes, rEntities, rFolders] = await Promise.all([
+      sbFetch('fn_notes?select=*'),
+      sbFetch('fn_entities?select=*'),
+      sbFetch('fn_folders?select=*'),
+    ]);
+
+    if(!rNotes||!rEntities||!rFolders){
+      setSyncStatus('online', t().syncOnline);
+      isSyncing=false; return;
+    }
+
+    // 3. Merge remote into local — detect conflicts
+    const conflicts=[];
+
+    // NOTES
+    for(const remote of rNotes){
+      const local = db.notes.find(n=>n.id===remote.id);
+      if(!local){
+        // New note from remote — add locally
+        db.notes.push(fromRow('notes', remote));
+      } else {
+        const localTs = new Date(local.updated_at||0).getTime();
+        const remoteTs = new Date(remote.updated_at||0).getTime();
+        if(Math.abs(localTs-remoteTs)>2000){ // >2 sec difference = real conflict
+          const localChanged = syncQueue.some(q=>q.data.id===local.id);
+          if(localChanged && remoteTs>localTs){
+            // Both changed → conflict!
+            conflicts.push({local, remote:fromRow('notes',remote)});
+          } else if(remoteTs>localTs){
+            // Remote is newer, no local pending change → just update
+            Object.assign(local, fromRow('notes',remote));
+          }
+        }
+      }
+    }
+
+    // ENTITIES
+    for(const remote of rEntities){
+      const local=db.entities.find(e=>e.id===remote.id);
+      if(!local) db.entities.push({id:remote.id,folderId:remote.folder_id,name:remote.name,updated_at:remote.updated_at});
+      else if(new Date(remote.updated_at)>new Date(local.updated_at||0)) Object.assign(local,{name:remote.name,folderId:remote.folder_id,updated_at:remote.updated_at});
+    }
+
+    // FOLDERS
+    for(const remote of rFolders){
+      const local=db.folders.find(f=>f.id===remote.id);
+      if(!local) db.folders.push({id:remote.id,name:remote.name,icon:remote.icon,updated_at:remote.updated_at});
+      else if(new Date(remote.updated_at)>new Date(local.updated_at||0)) Object.assign(local,{name:remote.name,icon:remote.icon,updated_at:remote.updated_at});
+    }
+
+    sdb();
+    rFolders_();rEntities();rNotesList();
+
+    if(conflicts.length>0){
+      pendingConflicts=conflicts;
+      showNextConflict();
+      setSyncStatus('conflict','⚡ '+conflicts.length+' çakışma var');
+    } else {
+      setSyncStatus('online', t().syncOnline+' · '+new Date().toLocaleTimeString());
+    }
+
+  } catch(e){
+    setSyncStatus('offline', t().syncOffline);
+  }
+  isSyncing=false;
+}
+
+function toRow(table, data){
+  if(table==='fn_notes') return {id:data.id,entity_id:data.entityId,date:data.date,contact:data.contact,summary:data.summary,followup:data.followup,extra:data.extra,actions:data.actions||[],updated_at:data.updated_at||now()};
+  if(table==='fn_entities') return {id:data.id,folder_id:data.folderId,name:data.name,updated_at:data.updated_at||now()};
+  if(table==='fn_folders') return {id:data.id,name:data.name,icon:data.icon,updated_at:data.updated_at||now()};
+}
+function fromRow(table, r){
+  if(table==='notes') return {id:r.id,entityId:r.entity_id,date:r.date,contact:r.contact,summary:r.summary,followup:r.followup,extra:r.extra,actions:r.actions||[],updated_at:r.updated_at};
+  return r;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CONFLICT UI
+// ═══════════════════════════════════════════════════════════
+let currentConflict=null;
+
+function showNextConflict(){
+  if(pendingConflicts.length===0) return;
+  currentConflict=pendingConflicts[0];
+  const {local,remote}=currentConflict;
+  const x=t();
+
+  document.getElementById('conflict-title').textContent=x.conflictTitle;
+  document.getElementById('conflict-sub').textContent=x.conflictSub;
+  document.getElementById('conflict-hint').textContent=x.conflictHint;
+  document.querySelector('.conflict-foot button:last-child').textContent=x.conflictLater;
+
+  const e=db.entities.find(en=>en.id===local.entityId);
+  const name=e?e.name:'';
+
+  document.getElementById('conflict-cols').innerHTML=`
+    <div class="conflict-col">
+      <div class="conflict-col-label">
+        <span>${x.conflictLocal}</span>
+        <span class="device">${new Date(local.updated_at).toLocaleString()}</span>
+      </div>
+      <div>
+        <div class="conflict-field-lbl">${x.summary}</div>
+        <div class="conflict-field">${local.summary||'—'}</div>
+      </div>
+      ${local.followup?`<div><div class="conflict-field-lbl">${x.followup}</div><div class="conflict-field">${local.followup}</div></div>`:''}
+      <div class="conflict-field-lbl">${x.actions}: ${(local.actions||[]).length}</div>
+      <div class="conflict-choose">
+        <button class="btn-choose pick-local" onclick="resolveConflict('local')">${x.conflictChooseLocal}</button>
+      </div>
+    </div>
+    <div class="conflict-col">
+      <div class="conflict-col-label">
+        <span>${x.conflictRemote}</span>
+        <span class="device">${new Date(remote.updated_at).toLocaleString()}</span>
+      </div>
+      <div>
+        <div class="conflict-field-lbl">${x.summary}</div>
+        <div class="conflict-field">${remote.summary||'—'}</div>
+      </div>
+      ${remote.followup?`<div><div class="conflict-field-lbl">${x.followup}</div><div class="conflict-field">${remote.followup}</div></div>`:''}
+      <div class="conflict-field-lbl">${x.actions}: ${(remote.actions||[]).length}</div>
+      <div class="conflict-choose">
+        <button class="btn-choose pick-remote" onclick="resolveConflict('remote')">${x.conflictChooseRemote}</button>
+      </div>
+    </div>`;
+
+  document.getElementById('conflict-modal').classList.add('show');
+}
+
+function resolveConflict(choice){
+  if(!currentConflict) return;
+  const {local,remote}=currentConflict;
+  const idx=db.notes.findIndex(n=>n.id===local.id);
+
+  if(choice==='local'){
+    // Keep local, push to remote
+    if(idx>=0) db.notes[idx].updated_at=now();
+    queueChange('upsert','fn_notes',db.notes[idx]);
+  } else if(choice==='remote'){
+    // Overwrite local with remote
+    if(idx>=0) db.notes[idx]=remote;
+  } else if(choice==='merge'){
+    // Keep local, create new note for remote version
+    const merged={...remote, id:'n'+Date.now(), date:remote.date+'', updated_at:now()};
+    db.notes.push(merged);
+    queueChange('upsert','fn_notes',merged);
+  }
+
+  sdb();
+  pendingConflicts=pendingConflicts.slice(1);
+  closeConflictModal();
+  rNotesList();rEntities();
+
+  if(pendingConflicts.length>0){
+    setTimeout(showNextConflict,300);
+  } else {
+    setSyncStatus('online',t().syncOnline+' · '+new Date().toLocaleTimeString());
+  }
+}
+
+function closeConflictModal(){
+  document.getElementById('conflict-modal').classList.remove('show');
+  currentConflict=null;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SETUP MODAL
+// ═══════════════════════════════════════════════════════════
+function openSetupModal(){
+  document.getElementById('sb-url').value=SB_URL;
+  document.getElementById('sb-key').value=SB_KEY;
+  document.getElementById('setup-modal').classList.add('show');
+}
+function closeSetupModal(){document.getElementById('setup-modal').classList.remove('show');}
+async function saveSupabaseConfig(){
+  const url=document.getElementById('sb-url').value.trim().replace(/\/$/,'');
+  const key=document.getElementById('sb-key').value.trim();
+  if(!url||!key){alert(lang==='tr'?'URL ve Key boş bırakılamaz.':'URL and Key are required.');return;}
+  SB_URL=url; SB_KEY=key;
+  localStorage.setItem('fn4_sb_url',url);
+  localStorage.setItem('fn4_sb_key',key);
+
+  // Push all local data to Supabase
+  setSyncStatus('syncing',t().syncSyncing);
+  for(const f of db.folders) queueChange('upsert','fn_folders',f);
+  for(const e of db.entities) queueChange('upsert','fn_entities',e);
+  for(const n of db.notes) queueChange('upsert','fn_notes',n);
+
+  closeSetupModal();
+  await syncNow();
+}
+function copySQL(){
+  navigator.clipboard.writeText(document.getElementById('sql-code').textContent);
+  alert(lang==='tr'?'SQL kopyalandı!':'SQL copied!');
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER FOLDERS
+// ═══════════════════════════════════════════════════════════
+function rFolders_(){
+  document.getElementById('folder-list').innerHTML=db.folders.map(f=>{
+    const cnt=db.notes.filter(n=>{const e=db.entities.find(x=>x.id===n.entityId);return e&&e.folderId===f.id;}).length;
+    return`<div class="folder-item${f.id===aFolder?' active':''}" onclick="selFolder('${f.id}')">
+      <span class="folder-icon">${f.icon}</span>
+      <span class="folder-name">${f.name}</span>
+      <span class="folder-count">${cnt}</span>
+      <div class="folder-actions">
+        <button class="icon-btn" onclick="event.stopPropagation();openRenameFolder('${f.id}')">✏️</button>
+        <button class="icon-btn danger" onclick="event.stopPropagation();delFolder('${f.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('lbl-add-folder').textContent=t().addFolder;
+}
+
+function selFolder(id){
+  aFolder=id;aEntity=null;aNote=null;
+  const f=db.folders.find(x=>x.id===id);
+  if(f){document.getElementById('p2-icon').textContent=f.icon;document.getElementById('p2-name').textContent=f.name;}
+  rFolders_();rEntities();rNotesList();showEditor(false);updateBC();
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER ENTITIES
+// ═══════════════════════════════════════════════════════════
+function rEntities(){
+  const el=document.getElementById('entity-list');
+  if(!aFolder){
+    el.innerHTML=`<div class="empty-state" style="height:auto;padding:28px 0;"><div class="empty-icon">👈</div><div class="empty-sub">${t().selectFolder}</div></div>`;
+    return;
+  }
+  const ents=db.entities.filter(e=>e.folderId===aFolder);
+  if(!ents.length){
+    el.innerHTML=`<div class="empty-state" style="height:auto;padding:28px 0;"><div class="empty-icon">➕</div><div class="empty-sub">${lang==='tr'?'Kayıt ekle':'Add entry'}</div></div>`;
+    return;
+  }
+  el.innerHTML=ents.map(e=>{
+    const notes=db.notes.filter(n=>n.entityId===e.id);
+    const open=notes.reduce((s,n)=>s+(n.actions||[]).filter(a=>!a.done).length,0);
+    const last=notes.sort((a,b)=>b.date.localeCompare(a.date))[0];
+    return`<div class="entity-item${e.id===aEntity?' active':''}" onclick="selEntity('${e.id}')">
+      <div class="entity-name"><span>${e.name}</span>${open?`<span class="entity-badge">${open}</span>`:''}</div>
+      <div class="entity-meta">${t().nc(notes.length)}${last?' · '+fd(last.date):''}</div>
+      <div class="entity-item-actions"><button class="icon-btn danger" onclick="event.stopPropagation();delEntity('${e.id}')">🗑</button></div>
+    </div>`;
+  }).join('');
+}
+
+function selEntity(id){
+  aEntity=id;aNote=null;
+  const e=db.entities.find(x=>x.id===id);
+  if(e)document.getElementById('p3-entity-name').textContent=e.name;
+  rEntities();rNotesList();showEditor(false);updateBC();
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER NOTES LIST
+// ═══════════════════════════════════════════════════════════
+function rNotesList(){
+  const el=document.getElementById('notes-list');
+  document.getElementById('lbl-new-note').textContent=t().newNote;
+  if(!aEntity){el.innerHTML='';return;}
+  const notes=db.notes.filter(n=>n.entityId===aEntity).sort((a,b)=>b.date.localeCompare(a.date));
+  if(!notes.length){el.innerHTML=`<div style="padding:16px;text-align:center;color:var(--text2);font-size:12px;">${t().noNotes}</div>`;return;}
+  el.innerHTML=notes.map(n=>{
+    const open=(n.actions||[]).filter(a=>!a.done).length;
+    const pending=syncQueue.some(q=>q.data.id===n.id);
+    return`<div class="note-date-item${n.id===aNote?' active':''}" onclick="openNote('${n.id}')">
+      <div class="note-date-label">${fd(n.date,true)}</div>
+      <div class="note-date-preview">${n.contact?n.contact+' · ':''}${n.summary?n.summary.substring(0,38)+'…':''}</div>
+      ${open?`<div class="note-action-hint">⚡ ${open} ${lang==='tr'?'aksiyon':'action'}</div>`:''}
+      ${pending&&SB_URL?`<div class="note-sync-badge">⏳ ${lang==='tr'?'senkron bekliyor':'sync pending'}</div>`:''}
+      <div class="note-item-btns"><button class="icon-btn danger" onclick="event.stopPropagation();delNote('${n.id}')">🗑</button></div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// OPEN NOTE
+// ═══════════════════════════════════════════════════════════
+function openNote(id){
+  aNote=id;
+  const n=db.notes.find(x=>x.id===id);if(!n)return;
+  const e=db.entities.find(x=>x.id===n.entityId);
+  document.getElementById('field-company').value=e?e.name:'';
+  document.getElementById('field-date').value=n.date||'';
+  document.getElementById('field-contact').value=n.contact||'';
+  document.getElementById('field-summary').value=n.summary||'';
+  document.getElementById('field-followup').value=n.followup||'';
+  document.getElementById('field-extra').value=n.extra||'';
+  rActions(n.actions||[]);
+  showEditor(true);updateBC();setSaved(true);rNotesList();
+}
+
+function showEditor(s){
+  document.getElementById('empty-state').style.display=s?'none':'flex';
+  document.getElementById('note-editor').style.display=s?'block':'none';
+  document.getElementById('save-bar').style.display=s?'flex':'none';
+  document.getElementById('btn-ai-top').style.display=s?'flex':'none';
+  applyLang();
+}
+
+// ═══════════════════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════════════════
+function rActions(acts){
+  document.getElementById('actions-list').innerHTML=acts.map(a=>`
+    <div class="action-item">
+      <div class="action-check${a.done?' done':''}" onclick="togAction('${a.id}')">${a.done?'✓':''}</div>
+      <textarea class="action-txt${a.done?' crossed':''}" rows="1" placeholder="${t().actionPh}" oninput="upActionTxt('${a.id}',this.value)">${a.text||''}</textarea>
+      <input class="action-own" value="${a.owner||''}" placeholder="${t().ownerPh}" onblur="upActionOwn('${a.id}',this.value)"/>
+    </div>`).join('');
+  document.getElementById('lbl-add-action').textContent=t().addAction;
+}
+function gn(){return db.notes.find(x=>x.id===aNote);}
+function togAction(aid){const n=gn();if(!n)return;const a=(n.actions||[]).find(x=>x.id===aid);if(a){a.done=!a.done;rActions(n.actions);markUnsaved();}}
+function upActionTxt(aid,v){const n=gn();if(!n)return;const a=(n.actions||[]).find(x=>x.id===aid);if(a){a.text=v;markUnsaved();}}
+function upActionOwn(aid,v){const n=gn();if(!n)return;const a=(n.actions||[]).find(x=>x.id===aid);if(a){a.owner=v;markUnsaved();}}
+function addAction(){
+  const n=gn();if(!n)return;
+  n.actions=[...(n.actions||[]),{id:'a'+Date.now(),text:'',owner:lang==='tr'?'Ben':'Me',done:false}];
+  rActions(n.actions);markUnsaved();
+}
+
+// ═══════════════════════════════════════════════════════════
+// CRUD
+// ═══════════════════════════════════════════════════════════
+function newNote(){
+  if(!aEntity)return;
+  const n={id:'n'+Date.now(),entityId:aEntity,date:new Date().toISOString().split('T')[0],contact:'',summary:'',followup:'',extra:'',actions:[],updated_at:now()};
+  db.notes.unshift(n);sdb();aNote=n.id;rNotesList();openNote(n.id);markUnsaved();
+}
+
+function saveNote(){
+  const n=gn();if(!n)return;
+  n.date=document.getElementById('field-date').value;
+  n.contact=document.getElementById('field-contact').value;
+  n.summary=document.getElementById('field-summary').value;
+  n.followup=document.getElementById('field-followup').value;
+  n.extra=document.getElementById('field-extra').value;
+  n.updated_at=now();
+  sdb();
+  queueChange('upsert','fn_notes',n);
+  rNotesList();rEntities();setSaved(true);updateBC();
+}
+
+function deleteCurrentNote(){delNote(aNote);}
+function delNote(id){
+  if(!confirm(t().delConfirm))return;
+  queueChange('delete','fn_notes',{id});
+  db.notes=db.notes.filter(x=>x.id!==id);sdb();
+  if(id===aNote){aNote=null;showEditor(false);}
+  rNotesList();rEntities();rFolders_();
+}
+function delEntity(id){
+  if(!confirm(t().delEntityConfirm))return;
+  db.notes.filter(n=>n.entityId===id).forEach(n=>queueChange('delete','fn_notes',{id:n.id}));
+  db.notes=db.notes.filter(n=>n.entityId!==id);
+  queueChange('delete','fn_entities',{id});
+  db.entities=db.entities.filter(e=>e.id!==id);sdb();
+  if(id===aEntity){aEntity=null;aNote=null;showEditor(false);rNotesList();}
+  rEntities();rFolders_();
+}
+function delFolder(id){
+  if(!confirm(t().delFolderConfirm))return;
+  const eIds=db.entities.filter(e=>e.folderId===id).map(e=>e.id);
+  db.notes.filter(n=>eIds.includes(n.entityId)).forEach(n=>queueChange('delete','fn_notes',{id:n.id}));
+  db.notes=db.notes.filter(n=>!eIds.includes(n.entityId));
+  eIds.forEach(eid=>queueChange('delete','fn_entities',{id:eid}));
+  db.entities=db.entities.filter(e=>e.folderId!==id);
+  queueChange('delete','fn_folders',{id});
+  db.folders=db.folders.filter(f=>f.id!==id);sdb();
+  if(id===aFolder){aFolder=null;aEntity=null;aNote=null;showEditor(false);rEntities();rNotesList();}
+  rFolders_();
+}
+
+// ═══════════════════════════════════════════════════════════
+// FOLDER MODAL
+// ═══════════════════════════════════════════════════════════
+function openNewFolder(){folderModalMode='new';selEmoji='📁';document.getElementById('fm-title').textContent=t().addFolderTitle;document.getElementById('fm-name').value='';document.getElementById('fm-name').placeholder=t().folderPh;rEmojiPicker();document.getElementById('folder-modal').classList.add('show');document.getElementById('fm-name').focus();}
+function openRenameFolder(id){folderModalMode='rename';renameFId=id;const f=db.folders.find(x=>x.id===id);selEmoji=f?f.icon:'📁';document.getElementById('fm-title').textContent=t().renameFolderTitle;document.getElementById('fm-name').value=f?f.name:'';document.getElementById('fm-name').placeholder=t().folderPh;rEmojiPicker();document.getElementById('folder-modal').classList.add('show');document.getElementById('fm-name').focus();}
+function rEmojiPicker(){document.getElementById('fm-emojis').innerHTML=EMOJIS.map(e=>`<div class="emoji-opt${e===selEmoji?' sel':''}" onclick="pickEmoji('${e}')">${e}</div>`).join('');}
+function pickEmoji(e){selEmoji=e;rEmojiPicker();}
+function closeFolderModal(){document.getElementById('folder-modal').classList.remove('show');}
+function confirmFolderModal(){
+  const name=document.getElementById('fm-name').value.trim();if(!name)return;
+  if(folderModalMode==='new'){
+    const f={id:'f'+Date.now(),name,icon:selEmoji,updated_at:now()};
+    db.folders.push(f);queueChange('upsert','fn_folders',f);
+  } else {
+    const f=db.folders.find(x=>x.id===renameFId);
+    if(f){f.name=name;f.icon=selEmoji;f.updated_at=now();if(renameFId===aFolder){document.getElementById('p2-icon').textContent=selEmoji;document.getElementById('p2-name').textContent=name;}queueChange('upsert','fn_folders',f);}
+  }
+  sdb();rFolders_();closeFolderModal();
+}
+
+// ═══════════════════════════════════════════════════════════
+// ENTITY MODAL
+// ═══════════════════════════════════════════════════════════
+function openNewEntity(){if(!aFolder)return;document.getElementById('em-title').textContent=t().addEntityTitle;document.getElementById('em-name').value='';document.getElementById('em-name').placeholder=t().entityPh;document.getElementById('entity-modal').classList.add('show');document.getElementById('em-name').focus();}
+function closeEntityModal(){document.getElementById('entity-modal').classList.remove('show');}
+function confirmEntityModal(){
+  const name=document.getElementById('em-name').value.trim();if(!name||!aFolder)return;
+  const e={id:'e'+Date.now(),folderId:aFolder,name,updated_at:now()};
+  db.entities.push(e);sdb();queueChange('upsert','fn_entities',e);
+  rEntities();rFolders_();closeEntityModal();selEntity(e.id);
+}
+
+// ═══════════════════════════════════════════════════════════
+// AI
+// ═══════════════════════════════════════════════════════════
+function openAIModal(){
+  aiResult=null;
+  document.getElementById('ai-result-area').innerHTML='';
+  document.getElementById('btn-apply-ai').disabled=true;
+  document.getElementById('ai-raw-input').value='';
+  document.getElementById('ai-api-key').value=sessionStorage.getItem('fn_key')||'';
+  applyAILang();
+  document.getElementById('ai-modal').classList.add('show');
+  setTimeout(()=>document.getElementById('ai-raw-input').focus(),100);
+}
+function closeAIModal(){document.getElementById('ai-modal').classList.remove('show');}
+function applyAILang(){
+  const x=t();
+  document.getElementById('ai-ttl').textContent=x.aiTitle;
+  document.getElementById('ai-lbl-raw').textContent=x.aiRawLbl;
+  document.getElementById('ai-raw-input').placeholder=x.aiRawPh;
+  document.getElementById('ai-key-note').innerHTML=x.aiKeyNote+' <a href="https://console.anthropic.com/settings/keys" target="_blank">Ücretsiz al →</a>';
+  document.getElementById('btn-run-ai').textContent=x.aiRun;
+  document.getElementById('btn-apply-ai').textContent=x.aiApply;
+  document.getElementById('ai-cancel-btn').textContent=x.aiCancel;
+  document.getElementById('lbl-ai-btn').textContent=x.aiBtn;
+}
+async function runAI(){
+  const raw=document.getElementById('ai-raw-input').value.trim();
+  const key=document.getElementById('ai-api-key').value.trim();
+  if(!raw){alert(lang==='tr'?'Ham not boş olamaz.':'Raw note cannot be empty.');return;}
+  if(!key){alert(lang==='tr'?'Lütfen API key girin.':'Please enter your API key.');return;}
+  sessionStorage.setItem('fn_key',key);
+  const e=db.entities.find(x=>x.id===aEntity);
+  const area=document.getElementById('ai-result-area');
+  area.innerHTML=`<div class="ai-loading"><div class="ai-spinner"></div><span>${t().aiProcessing}</span></div>`;
+  document.getElementById('btn-run-ai').disabled=true;
+  document.getElementById('btn-apply-ai').disabled=true;
+  const system=`You are a professional meeting notes assistant for a senior enterprise account manager.
+Extract and structure information from raw, messy meeting notes.
+Respond ONLY with valid JSON — no markdown fences, no explanation.
+JSON schema: {"summary":"2-4 sentence professional summary","actions":[{"text":"action","owner":"person","done":false}],"followup":"follow-up items","extra":"background context"}
+Actions array may be empty. Use the same language as the input. Company context: ${e?e.name:''}`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system,messages:[{role:'user',content:'Raw notes: '+raw}]})});
+    if(!res.ok){const err=await res.json();throw new Error(err.error?.message||`HTTP ${res.status}`);}
+    const data=await res.json();
+    const text=data.content.map(c=>c.text||'').join('');
+    aiResult=JSON.parse(text.replace(/```json|```/g,'').trim());
+    renderAIResult(aiResult);
+    document.getElementById('btn-apply-ai').disabled=false;
+  }catch(err){
+    area.innerHTML=`<div class="ai-error">⚠️ ${err.message}</div>`;
+  }finally{
+    document.getElementById('btn-run-ai').disabled=false;
+  }
+}
+function renderAIResult(r){
+  const x=t();
+  const acts=r.actions&&r.actions.length?r.actions.map(a=>`<div class="ai-rs-action"><span style="color:var(--text3)">○</span><span style="flex:1">${a.text}</span><span class="ai-rs-owner">${a.owner||''}</span></div>`).join(''):`<div style="color:var(--text2);font-size:12px;">${x.aiNoActions}</div>`;
+  document.getElementById('ai-result-area').innerHTML=`<div class="ai-result">${r.summary?`<div><div class="ai-rs-lbl">${x.aiSummaryLbl}</div><div class="ai-rs-txt">${r.summary}</div></div>`:''}<div><div class="ai-rs-lbl">${x.aiActionsLbl}</div>${acts}</div>${r.followup?`<div><div class="ai-rs-lbl">${x.aiFollowupLbl}</div><div class="ai-rs-txt">${r.followup}</div></div>`:''}${r.extra?`<div><div class="ai-rs-lbl">${x.aiExtraLbl}</div><div class="ai-rs-txt">${r.extra}</div></div>`:''}</div>`;
+}
+function applyAIResult(){
+  if(!aiResult||!aNote)return;
+  const n=gn();if(!n)return;
+  if(aiResult.summary)document.getElementById('field-summary').value=aiResult.summary;
+  if(aiResult.followup)document.getElementById('field-followup').value=aiResult.followup;
+  if(aiResult.extra)document.getElementById('field-extra').value=aiResult.extra;
+  if(aiResult.actions&&aiResult.actions.length){
+    const newActs=aiResult.actions.map(a=>({id:'a'+Date.now()+Math.random(),text:a.text,owner:a.owner||'',done:false}));
+    n.actions=[...(n.actions||[]),...newActs];
+    rActions(n.actions);
+  }
+  markUnsaved();closeAIModal();
+}
+
+// ═══════════════════════════════════════════════════════════
+// BREADCRUMB / SAVE STATUS
+// ═══════════════════════════════════════════════════════════
+function updateBC(){
+  const parts=["AKY's Notes"];
+  const f=db.folders.find(x=>x.id===aFolder);if(f)parts.push(`${f.icon} ${f.name}`);
+  const e=db.entities.find(x=>x.id===aEntity);if(e)parts.push(e.name);
+  if(aNote){const n=db.notes.find(x=>x.id===aNote);if(n)parts.push(fd(n.date,true));}
+  document.getElementById('breadcrumb').innerHTML=parts.map((p,i)=>i===parts.length-1?`<span class="bc-cur">${p}</span>`:`<span>${p}</span><span class="bc-sep">›</span>`).join('');
+}
+function markUnsaved(){setSaved(false);}
+function setSaved(s){
+  const el=document.getElementById('save-status');
+  el.textContent=s?t().saved:t().unsaved;
+  el.style.color=s?'var(--green)':'var(--text2)';
+  document.getElementById('btn-save').textContent=t().save;
+  document.getElementById('btn-del').textContent=t().del;
+}
+
+// ═══════════════════════════════════════════════════════════
+// LANG / THEME
+// ═══════════════════════════════════════════════════════════
+function applyLang(){
+  document.getElementById('lbl-summary').textContent=t().summary;
+  document.getElementById('lbl-actions').textContent=t().actions;
+  document.getElementById('lbl-followup').textContent=t().followup;
+  document.getElementById('lbl-extra').textContent=t().extra;
+  document.getElementById('lbl-add-action').textContent=t().addAction;
+  document.getElementById('field-contact').placeholder=t().contactPh;
+  document.getElementById('field-summary').placeholder=t().summaryPh;
+  document.getElementById('field-followup').placeholder=t().followupPh;
+  document.getElementById('field-extra').placeholder=t().extraPh;
+  document.getElementById('lbl-empty-title').textContent=t().emptyTitle;
+  document.getElementById('lbl-empty-sub').textContent=t().emptySub;
+  document.getElementById('lbl-add-folder').textContent=t().addFolder;
+  document.getElementById('lbl-new-note').textContent=t().newNote;
+  document.getElementById('lbl-select-folder').textContent=t().selectFolder;
+  document.getElementById('lbl-ai-btn').textContent=t().aiBtn;
+  updateSyncLabel();
+}
+function updateSyncLabel(){
+  if(!SB_URL) setSyncStatus('',t().syncLocal);
+}
+function toggleLang(){
+  lang=lang==='tr'?'en':'tr';localStorage.setItem('fn4_lang',lang);
+  document.getElementById('lang-btn').textContent=lang==='tr'?'EN':'TR';
+  document.getElementById('lang-btn2').textContent=lang==='tr'?'EN':'TR';
+  applyLang();applyAILang();rFolders_();rEntities();rNotesList();updateBC();
+}
+function toggleTheme(){
+  theme=theme==='dark'?'light':'dark';localStorage.setItem('fn4_theme',theme);
+  document.body.classList.toggle('light',theme==='light');
+  const ic=theme==='dark'?'🌙':'☀️';
+  document.getElementById('theme-btn').textContent=ic;
+  document.getElementById('theme-btn2').textContent=ic;
+}
+
+// ═══════════════════════════════════════════════════════════
+// MOBILE
+// ═══════════════════════════════════════════════════════════
+function toggleMobileNav(){
+  const pf=document.getElementById('panel-folders');
+  if(pf.classList.contains('open')){closeAllPanels();}
+  else{pf.classList.add('open');document.getElementById('mob-overlay').classList.add('show');}
+}
+function closeAllPanels(){
+  ['panel-folders','panel-entities','panel-notes'].forEach(id=>document.getElementById(id).classList.remove('open'));
+  document.getElementById('mob-overlay').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════════════════
+// NETWORK EVENTS
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('online',()=>{
+  isOnline=true;
+  if(SB_URL) syncNow();
+  else setSyncStatus('',t().syncLocal);
+});
+window.addEventListener('offline',()=>{
+  isOnline=false;
+  setSyncStatus('offline',t().syncOffline);
+});
+
+// ═══════════════════════════════════════════════════════════
+// KEYBOARD
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='s'){e.preventDefault();saveNote();}
+  if(e.key==='Escape'){closeFolderModal();closeEntityModal();closeAIModal();closeConflictModal();closeSetupModal();}
+});
+['field-date','field-contact','field-summary','field-followup','field-extra'].forEach(id=>{
+  const el=document.getElementById(id);if(el)el.addEventListener('input',markUnsaved);
+});
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+if(theme==='light')document.body.classList.add('light');
+const thIc=theme==='dark'?'🌙':'☀️';
+document.getElementById('theme-btn').textContent=thIc;
+document.getElementById('theme-btn2').textContent=thIc;
+document.getElementById('lang-btn').textContent=lang==='tr'?'EN':'TR';
+document.getElementById('lang-btn2').textContent=lang==='tr'?'EN':'TR';
+applyLang();rFolders_();rEntities();rNotesList();updatePendingBadge();
+
+// Initial sync if configured
+if(SB_URL&&SB_KEY&&isOnline) setTimeout(syncNow, 800);
+// Periodic sync every 60s
+setInterval(()=>{if(SB_URL&&SB_KEY&&isOnline&&!isSyncing)syncNow();},60000);
+</script>
+</body>
+</html>
